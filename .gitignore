@@ -1,3 +1,8 @@
+# this project
+#ignore potentially real data
+*.csv
+*.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
