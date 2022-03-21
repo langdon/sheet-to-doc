@@ -30,10 +30,13 @@ ap.add_argument("-i", "--input", required=True, dest="sheet_fn",
 	help="csv file with form submissions")
 ap.add_argument("-o", "--output", required=True, dest="output_fn",
 	help="doc with form submissions consolidated")
+ap.add_argument("-p", "--remove-pii", required=False, dest="pii", action='store_true',
+	help="remove pii from output")
 args = vars(ap.parse_args())
 
 sheet_fn = test_file(args["sheet_fn"])
 output_fn = args["output_fn"]
+pii = args["pii"]
 
 feedback = {}
 form_csv = pd.read_csv(sheet_fn)
@@ -54,12 +57,23 @@ for index, row in form_csv.iterrows():
 
 output_template = '''
 {% for project in feedback %}
-    Project Name: {{ project.name }}
+# {{ project.name -}}
     {% for q_label, answers in project.questions.items() %}
-        Question: {{ q_label }}
+## Question: {{ q_label -}}
         {% for email, answer in answers.items() %}
-            Email: {{ email }}
-            Feedback: {{ answer }}
+* **{{ email }}**: {{ answer -}}
+        {% endfor %}
+    {% endfor %}
+{%- endfor %}
+'''
+
+output_template_pii = '''
+{% for project in feedback %}
+# {{ project.name -}}
+    {% for q_label, answers in project.questions.items() %}
+## Question: {{ q_label -}}
+        {% for email, answer in answers.items() %}
+* {{ answer -}}
         {% endfor %}
     {% endfor %}
 {%- endfor %}
@@ -73,6 +87,8 @@ output_template = '''
 tmp_feedback = feedback.values()
 
 tm = Template(output_template)
+if pii:
+    tm = Template(output_template_pii)
 output = tm.render(feedback=tmp_feedback)
 
 with open(output_fn, "w") as output_file:
